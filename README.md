@@ -6,5 +6,6 @@ Basic image viewer widget:
 * Pan with mouse wheel click
 * Draw with left click
 * Custom brush cursor
+* Undo
 
 ![](readme.gif)

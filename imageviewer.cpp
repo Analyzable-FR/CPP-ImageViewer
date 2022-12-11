@@ -22,30 +22,33 @@ SOFTWARE.
 #include "./ui_imageviewer.h"
 
 ImageViewer::ImageViewer(QWidget *parent)
-    : QGraphicsView(parent), ui(new Ui::ImageViewer), scene(new QGraphicsScene(this)), image(new QGraphicsPixmapItem()), pixmap(new QPixmap()), brushPixmap(new QPixmap(QStringLiteral(":/assets/cursor.png"))), painter(new QPainter()), currentZoom(1), factor(1), isDrawable(true) {
+    : QGraphicsView(parent), ui(new Ui::ImageViewer), scene(new QGraphicsScene(this)), image(new QGraphicsPixmapItem()), brushPixmap(QStringLiteral(":/assets/cursor.png")), painter(new QPainter()), currentZoom(1), factor(1), isDrawable(true), undoAction(new QAction(this)) {
   ui->setupUi(this);
   image->setAcceptDrops(true);
   scene->addItem(image);
   this->setScene(scene);
   this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   this->setBrush();
+  this->undoAction->setShortcut(QKeySequence(QKeySequence::Undo));
+  connect(undoAction, &QAction::triggered, this, &ImageViewer::undo);
+  this->addAction(this->undoAction);
 }
 
 void ImageViewer::setBrush(QColor color, double size) {
   this->brushColor = color;
   this->brushSize = size;
-  drawingCursor = new QCursor(brushPixmap->scaledToHeight(int(this->brushSize * this->currentZoom)));
+  drawingCursor = new QCursor(brushPixmap.scaledToHeight(int(this->brushSize * this->currentZoom)));
 }
 
 void ImageViewer::setImage(const QString &path) {
   this->clear();
-  this->pixmap->load(path);
-  this->image->setPixmap(*this->pixmap);
+  QPixmap pixmap(path);
+  this->image->setPixmap(pixmap);
 }
 
 void ImageViewer::clear() {
-  this->pixmap->load(QString());
-  this->image->setPixmap(*this->pixmap);
+  this->undoStack.clear();
+  this->image->setPixmap(QPixmap());
 }
 
 void ImageViewer::wheelEvent(QWheelEvent *event) {
@@ -106,12 +109,14 @@ void ImageViewer::mouseMoveEvent(QMouseEvent *event) {
   }
 
   if (event->buttons() == Qt::LeftButton && this->isDrawable && event->modifiers() == Qt::NoModifier) {  // Draw with left click pressed
-    this->painter->begin(this->pixmap);
+    this->addToUndoStack();
+    QPixmap pixmap = this->image->pixmap();
+    this->painter->begin(&pixmap);
     this->painter->setPen(QPen(this->brushColor, this->brushSize, Qt::SolidLine, Qt::RoundCap));
     this->painter->drawLine(this->drawReference, this->mapToScene(event->pos()));
     this->drawReference = this->mapToScene(event->pos());
     this->painter->end();
-    this->image->setPixmap(*this->pixmap);
+    this->image->setPixmap(pixmap);
   }
 }
 
@@ -124,6 +129,16 @@ void ImageViewer::dropEvent(QDropEvent *event) {
 
 void ImageViewer::dragEnterEvent(QDragEnterEvent *event) {
   event->acceptProposedAction();
+}
+
+void ImageViewer::addToUndoStack() {
+  this->undoStack.push(this->image->pixmap().copy());
+}
+
+void ImageViewer::undo() {
+  if (!this->undoStack.isEmpty()) {
+    this->image->setPixmap(this->undoStack.pop());
+  }
 }
 
 ImageViewer::~ImageViewer() {

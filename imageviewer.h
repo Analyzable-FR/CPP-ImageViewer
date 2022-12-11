@@ -21,6 +21,7 @@ SOFTWARE.
 #ifndef IMAGEVIEWER_H
 #define IMAGEVIEWER_H
 
+#include <QAction>
 #include <QColor>
 #include <QCursor>
 #include <QDropEvent>
@@ -32,6 +33,7 @@ SOFTWARE.
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollBar>
+#include <QStack>
 #include <QWheelEvent>
 #include <QWidget>
 
@@ -54,8 +56,7 @@ class ImageViewer : public QGraphicsView {
  private:
   QGraphicsScene *scene;
   QGraphicsPixmapItem *image;
-  QPixmap *pixmap;
-  QPixmap *brushPixmap;
+  QPixmap brushPixmap;
   QPainter *painter;
   QColor brushColor;
   double brushSize;
@@ -66,6 +67,10 @@ class ImageViewer : public QGraphicsView {
   QPoint brushReference;
   QPointF drawReference;
   bool isDrawable;
+  QStack<QPixmap> undoStack;
+  void addToUndoStack();
+  void undo();
+  QAction *undoAction;
   void wheelEvent(QWheelEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
