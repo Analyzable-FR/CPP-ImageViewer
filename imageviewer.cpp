@@ -65,6 +65,7 @@ void ImageViewer::wheelEvent(QWheelEvent *event) {
   }
   this->scale(factor, factor);
   event->accept();
+  QGraphicsView::wheelEvent(event);
 }
 
 void ImageViewer::mousePressEvent(QMouseEvent *event) {
@@ -75,14 +76,16 @@ void ImageViewer::mousePressEvent(QMouseEvent *event) {
   else if (event->buttons() == Qt::LeftButton and event->modifiers() == Qt::ControlModifier) {  // Get coordinates reference for brush size
     this->brushReference = event->pos();
   }
-  if (event->buttons() == Qt::LeftButton) {  // Get drawing coordinates reference with left click
+  else if (event->buttons() == Qt::LeftButton) {  // Get drawing coordinates reference with left click
     QApplication::setOverrideCursor(*this->drawingCursor);
     this->drawReference = this->mapToScene(event->pos());
   }
+  QGraphicsView::mousePressEvent(event);
 }
 
 void ImageViewer::mouseReleaseEvent(QMouseEvent *event) {
   QApplication::restoreOverrideCursor();
+  QGraphicsView::mouseReleaseEvent(event);
 }
 
 void ImageViewer::mouseMoveEvent(QMouseEvent *event) {
@@ -118,6 +121,7 @@ void ImageViewer::mouseMoveEvent(QMouseEvent *event) {
     this->painter->end();
     this->image->setPixmap(pixmap);
   }
+  QGraphicsView::mouseMoveEvent(event);
 }
 
 void ImageViewer::dropEvent(QDropEvent *event) {
